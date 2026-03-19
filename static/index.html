@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scribble.io Clone</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <div id="login-screen" class="screen active">
+            <div class="glass-panel login-card">
+                <h1 class="logo">Scribble<span class="accent">.io</span> Clone</h1>
+                <p class="subtitle">Draw & Guess Together!</p>
+                <div class="input-group">
+                    <input type="text" id="username-input" placeholder="Your Username" autocomplete="off" maxlength="15">
+                </div>
+                <div class="input-group">
+                    <input type="text" id="room-input" placeholder="Room Code" autocomplete="off" maxlength="10">
+                </div>
+                <button id="join-btn" class="primary-btn">Join / Create Room</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen">
+            <header class="game-header">
+                <div class="logo-small">Scribble<span class="accent">.io</span></div>
+                <div class="word-display" id="word-display">Waiting...</div>
+                <div class="timer" id="room-code-display">Room: --</div>
+            </header>
+            
+            <main class="game-main">
+                <aside class="players-sidebar glass-panel">
+                    <h3>Players</h3>
+                    <ul id="players-list">
+                    </ul>
+                    <button id="start-btn" class="secondary-btn" style="display: none;">Start Game</button>
+                </aside>
+
+                <div class="canvas-container glass-panel">
+                    <div id="overlay-message" class="overlay-message">Waiting for players to start...</div>
+                    <canvas id="drawing-canvas"></canvas>
+                    <div class="toolbar" id="toolbar" style="display: none;">
+                        <input type="color" id="color-picker" value="#000000" class="tool-btn color-input">
+                        <input type="range" id="size-picker" min="2" max="25" value="5" class="tool-btn size-slider">
+                        <button id="erase-btn" class="tool-btn">Eraser</button>
+                        <button id="clear-btn" class="tool-btn danger">Clear</button>
+                    </div>
+                </div>
+
+                <aside class="chat-sidebar glass-panel">
+                    <div class="chat-messages" id="chat-messages">
+                    </div>
+                    <form id="chat-form" class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Type your guess here..." autocomplete="off">
+                    </form>
+                </aside>
+            </main>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
