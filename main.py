@@ -108,7 +108,7 @@ class ConnectionManager:
             if player:
                 room.remove_player(websocket)
             if len(room.players) == 0:
-                del rooms[room_id]
+                rooms.pop(room_id, None)
             return room, player
         return None, None
 
@@ -166,6 +166,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
 
     try:
         while True:
+            assert isinstance(room, Room)
+            assert isinstance(player, Player)
             data_str = await websocket.receive_text()
             try:
                 data = json.loads(data_str)
