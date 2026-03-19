@@ -52,12 +52,12 @@ class Room:
 
     def __init__(self, room_id: str):
         self.room_id = room_id
-        self.players: List[Player] = []
+        self.players = []
         self.drawer_index = -1
         self.current_word = ""
         self.is_playing = False
-        self.history: List[dict] = []
-        self.guessed_correctly: Set[str] = set()
+        self.history = []
+        self.guessed_correctly = set()
 
     def add_player(self, player: Player):
         self.players.append(player)
@@ -253,19 +253,19 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
     except Exception:
         pass
     finally:
-        room, player = manager.disconnect(websocket, room_id)
-        if room and player:
-            await manager.broadcast(room, {
+        d_room, d_player = manager.disconnect(websocket, room_id)
+        if d_room and d_player:
+            await manager.broadcast(d_room, {
                 "type": "players",
-                "data": [{"id": p.id, "username": p.username, "score": p.score} for p in room.players]
+                "data": [{"id": p.id, "username": p.username, "score": p.score} for p in d_room.players]
             })
-            await manager.broadcast(room, {
+            await manager.broadcast(d_room, {
                 "type": "system_chat",
-                "data": f"{player.username} left."
+                "data": f"{d_player.username} left."
             })
-            if len(room.players) < 2 and room.is_playing:
-                room.is_playing = False
-                await manager.broadcast(room, {
+            if len(d_room.players) < 2 and d_room.is_playing:
+                d_room.is_playing = False
+                await manager.broadcast(d_room, {
                     "type": "system_chat",
                     "data": "Not enough players to continue."
                 })
