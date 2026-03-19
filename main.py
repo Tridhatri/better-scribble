@@ -133,6 +133,8 @@ manager = ConnectionManager()
 
 @app.websocket("/ws/{room_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
+    room: Room
+    player: Player
     room, player = await manager.connect(websocket, room_id, username)
     print(f"Connected: {username} to {room_id}")
     
@@ -212,7 +214,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
                 if not msg:
                     continue
                 
-                if room.is_playing and len(room.players) > 0 and room.players[room.drawer_index] != player and player.id not in room.guessed_correctly:
+                is_drawer = (len(room.players) > 0 and room.players[room.drawer_index] == player)
+                has_guessed = player.id in room.guessed_correctly
+                
+                assert isinstance(room, Room)
+                if room.is_playing and not is_drawer and not has_guessed:
                     if msg.lower() == room.current_word.lower():
                         player.score += 10
                         room.guessed_correctly.add(player.id)
