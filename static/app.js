@@ -106,7 +106,7 @@ function handleMessage(msg) {
                 addChatMessage(msg.message, 'success');
             }
             break;
-            // CLEAR local state for new turn
+        case 'game_started':
             isMyTurn = false;
             toolbar.style.display = 'none';
             chatInput.disabled = false;
@@ -115,30 +115,26 @@ function handleMessage(msg) {
             overlayMessage.style.display = 'none';
 
             if (msg.drawer === myId) {
-                console.log("TURN ASSIGNED: You are drawing!");
+                console.log("You are DRAWING this turn!");
             } else {
-                console.log("TURN ASSIGNED: You are guessing!");
+                console.log("You are GUESSING this turn!");
             }
             if (msg.word_length) {
                 wordDisplay.textContent = "_ ".repeat(msg.word_length).trim();
                 wordDisplay.style.letterSpacing = "10px";
             }
             startBtn.style.display = 'none';
-            toolbar.style.display = 'none';
-            chatInput.disabled = false;
             resizeCanvas();
             break;
         case 'word_assignment':
-            console.log("TURN ACTIVATED: You received the word assignment!");
             isMyTurn = true;
             wordDisplay.textContent = msg.word;
             wordDisplay.style.letterSpacing = "5px";
             toolbar.style.display = 'flex';
-            chatInput.disabled = true; // drawer can't guess
+            chatInput.disabled = true;
             resizeCanvas();
             break;
         case 'draw':
-            console.log("Drawing received:", msg.data);
             drawHistory.push(msg.data);
             drawLineServer(msg.data);
             break;
@@ -265,8 +261,6 @@ function drawLineServer(data) {
     const y0 = data.y0 * scaleY;
     const x1 = data.x1 * scaleX;
     const y1 = data.y1 * scaleY;
-
-    console.log(`Rendering from server: (${x0.toFixed(1)}, ${y0.toFixed(1)}) to (${x1.toFixed(1)}, ${y1.toFixed(1)})`);
 
     ctx.beginPath();
     ctx.moveTo(x0, y0);

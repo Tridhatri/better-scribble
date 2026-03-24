@@ -103,9 +103,21 @@ class ConnectionManager:
         if room_id not in rooms:
             rooms[room_id] = Room(room_id)
         room = rooms[room_id]
-        player = Player(websocket, username)
-        room.add_player(player)
-        return room, player
+        
+        # GHOST BUSTER: Look for existing player with same username to replace
+        existing_player = None
+        for p in room.players:
+            if p.username == username:
+                existing_player = p
+                break
+        
+        if existing_player:
+            existing_player.websocket = websocket
+            return room, existing_player
+        else:
+            player = Player(websocket, username)
+            room.add_player(player)
+            return room, player
 
     def disconnect(self, websocket: WebSocket, room_id: str):
         if room_id in rooms:
