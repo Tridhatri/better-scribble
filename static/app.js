@@ -4,8 +4,6 @@ const usernameInput = document.getElementById('username-input');
 const roomInput = document.getElementById('room-input');
 const joinBtn = document.getElementById('join-btn');
 const hostControls = document.getElementById('host-controls');
-const difficultySelect = document.getElementById('difficulty-select');
-
 const playersList = document.getElementById('players-list');
 const startBtn = document.getElementById('start-btn');
 const wordDisplay = document.getElementById('word-display');
@@ -29,22 +27,33 @@ let isDrawing = false;
 let isMyTurn = false;
 let currentSettings = { color: '#000000', size: 5, erase: false };
 let lastPos = { x: 0, y: 0 };
+let drawHistory = []; // Unified history to replay on resize
 let myUsername = "";
+let myId = "";
 
 function resizeCanvas() {
-    // Preserve content when resizing
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const dpr = window.devicePixelRatio || 1;
     const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height - (toolbar.style.display !== 'none' ? toolbar.offsetHeight : 0);
-    // Draw back
-    ctx.putImageData(imgData, 0, 0);
     
-    // Set white background initially if empty
-    ctx.fillStyle = "white";
-    ctx.globalCompositeOperation = "destination-under";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalCompositeOperation = "source-over";
+    // Set display size (css pixels)
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = (rect.height - (toolbar.style.display !== 'none' ? toolbar.offsetHeight : 0)) + 'px';
+    
+    // Set actual internal resolution
+    const newWidth = rect.width * dpr;
+    const newHeight = (rect.height - (toolbar.style.display !== 'none' ? toolbar.offsetHeight : 0)) * dpr;
+    
+    if (canvas.width !== newWidth || canvas.height !== newHeight) {
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        ctx.scale(dpr, dpr);
+        
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, rect.width, rect.height);
+        
+        // REPLAY drawing from history – works perfectly on mobile!
+        drawHistory.forEach(payload => drawLineLocalInternal(payload));
+    }
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -53,15 +62,15 @@ joinBtn.addEventListener('click', () => {
     myUsername = usernameInput.value.trim();
     const room = roomInput.value.trim();
     if (myUsername && room) {
-        connectWebSocket(room, myUsername, 2); // Default difficulty 2 in join URL
+        connectWebSocket(room, myUsername);
     } else {
         alert("Please enter both username and room code.");
     }
 });
 
-function connectWebSocket(room, username, difficulty) {
+function connectWebSocket(room, username) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${window.location.host}/ws/${room}/${username}/${difficulty}`);
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws/${room}/${username}`);
 
     ws.onopen = () => {
         loginScreen.classList.remove('active');
@@ -97,10 +106,19 @@ function handleMessage(msg) {
                 addChatMessage(msg.message, 'success');
             }
             break;
-        case 'game_started':
-            // we figure out if it's us later but definitely hide stuff
+            // CLEAR local state for new turn
             isMyTurn = false;
+            toolbar.style.display = 'none';
+            chatInput.disabled = false;
+            drawHistory = [];
+            clearCanvas();
             overlayMessage.style.display = 'none';
+
+            if (msg.drawer === myId) {
+                console.log("TURN ASSIGNED: You are drawing!");
+            } else {
+                console.log("TURN ASSIGNED: You are guessing!");
+            }
             if (msg.word_length) {
                 wordDisplay.textContent = "_ ".repeat(msg.word_length).trim();
                 wordDisplay.style.letterSpacing = "10px";
@@ -111,6 +129,7 @@ function handleMessage(msg) {
             resizeCanvas();
             break;
         case 'word_assignment':
+            console.log("TURN ACTIVATED: You received the word assignment!");
             isMyTurn = true;
             wordDisplay.textContent = msg.word;
             wordDisplay.style.letterSpacing = "5px";
@@ -120,9 +139,11 @@ function handleMessage(msg) {
             break;
         case 'draw':
             console.log("Drawing received:", msg.data);
+            drawHistory.push(msg.data);
             drawLineServer(msg.data);
             break;
         case 'clear':
+            drawHistory = [];
             clearCanvas();
             break;
     }
@@ -140,6 +161,7 @@ function updatePlayersList(players) {
     }
     
     players.forEach(p => {
+        if (p.username === myUsername) myId = p.id;
         const li = document.createElement('li');
         li.textContent = `${p.username}: ${p.score}`;
         playersList.appendChild(li);
@@ -155,8 +177,7 @@ function addChatMessage(text, type) {
 }
 
 startBtn.addEventListener('click', () => {
-    const difficulty = parseInt(difficultySelect.value);
-    ws.send(JSON.stringify({ type: 'start_game', difficulty: difficulty }));
+    ws.send(JSON.stringify({ type: 'start_game' }));
 });
 
 chatForm.addEventListener('submit', (e) => {
@@ -171,8 +192,6 @@ chatForm.addEventListener('submit', (e) => {
 // Canvas Drawing Logic
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     
     let clientX = e.clientX;
     let clientY = e.clientY;
@@ -183,8 +202,8 @@ function getMousePos(e) {
     }
     
     return {
-        x: (clientX - rect.left) * scaleX,
-        y: (clientY - rect.top) * scaleY
+        x: clientX - rect.left,
+        y: clientY - rect.top
     };
 }
 
@@ -205,22 +224,23 @@ function draw(e) {
     
     const pos = getMousePos(e);
     
+    const rect = canvas.getBoundingClientRect();
     const payload = {
         x0: lastPos.x, y0: lastPos.y,
         x1: pos.x, y1: pos.y,
         color: currentSettings.erase ? '#ffffff' : currentSettings.color,
         size: currentSettings.size,
-        w: canvas.width, h: canvas.height
+        w: rect.width, h: rect.height
     };
     
     drawLineLocal(payload);
-    console.log("Sending drawing:", payload);
+    drawHistory.push(payload);
     ws.send(JSON.stringify({ type: 'draw', data: payload }));
     
     lastPos = pos;
 }
 
-function drawLineLocal(data) {
+function drawLineLocalInternal(data) {
     ctx.beginPath();
     ctx.moveTo(data.x0, data.y0);
     ctx.lineTo(data.x1, data.y1);
@@ -231,13 +251,26 @@ function drawLineLocal(data) {
     ctx.closePath();
 }
 
+function drawLineLocal(data) {
+    drawLineLocalInternal(data);
+}
+
 function drawLineServer(data) {
-    const scaleX = canvas.width / data.w;
-    const scaleY = canvas.height / data.h;
+    // We scale based on the CSS size (rect) to avoid DPR confusion
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = rect.width / data.w;
+    const scaleY = rect.height / data.h;
     
+    const x0 = data.x0 * scaleX;
+    const y0 = data.y0 * scaleY;
+    const x1 = data.x1 * scaleX;
+    const y1 = data.y1 * scaleY;
+
+    console.log(`Rendering from server: (${x0.toFixed(1)}, ${y0.toFixed(1)}) to (${x1.toFixed(1)}, ${y1.toFixed(1)})`);
+
     ctx.beginPath();
-    ctx.moveTo(data.x0 * scaleX, data.y0 * scaleY);
-    ctx.lineTo(data.x1 * scaleX, data.y1 * scaleY);
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x1, y1);
     ctx.strokeStyle = data.color;
     ctx.lineWidth = data.size;
     ctx.lineCap = 'round';

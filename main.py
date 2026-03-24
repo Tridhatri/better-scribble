@@ -20,28 +20,20 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def get_index():
     return FileResponse("static/index.html")
 
-WORDS_BY_DIFFICULTY = {
-    1: [ # Very Easy: Common objects, animals, 3-5 letters
-        "apple", "cat", "dog", "fish", "ball", "sun", "tree", "hat", "cup", "book", 
-        "door", "lamp", "frog", "bird", "milk", "egg", "star", "cake", "boat", "car"
-    ],
-    2: [ # Easy: Common concepts, 5-7 letters
-        "banana", "orange", "grape", "house", "train", "piano", "guitar", "pencil", 
-        "spider", "school", "bridge", "flower", "rabbit", "burger", "camera", "cheese"
-    ],
-    3: [ # Medium: Compounds, actions, 7-10 letters
-        "computer", "bicycle", "airplane", "volcano", "umbrella", "penguin", "elephant", 
-        "backpack", "butterfly", "sandwich", "keyboard", "mountain", "telescope", "dinosaur"
-    ],
-    4: [ # Hard: Abstract or detailed objects, 10+ letters
-        "watermelon", "smartphone", "spaceship", "xylophone", "microphone", "skyscraper", 
-        "helicopter", "lighthouse", "strawberry", "motorcycle", "earthquake", "environment"
-    ],
-    5: [ # Very Hard: Rare, abstract, or complex to draw
-        "philosophy", "gravity", "algorithm", "quarantine", "metabolism", "symphony", 
-        "labyrinth", "renaissance", "evaporation", "photosynthesis", "perspective", "architecture"
-    ]
-}
+WORDS = [
+    # Level 1
+    "apple", "cat", "dog", "fish", "ball", "sun", "tree", "hat", "cup", "book", 
+    "door", "lamp", "frog", "bird", "milk", "egg", "star", "cake", "boat", "car",
+    # Level 2
+    "banana", "orange", "grape", "house", "train", "piano", "guitar", "pencil", 
+    "spider", "school", "bridge", "flower", "rabbit", "burger", "camera", "cheese",
+    # Level 3
+    "computer", "bicycle", "airplane", "volcano", "umbrella", "penguin", "elephant", 
+    "backpack", "butterfly", "sandwich", "keyboard", "mountain", "telescope", "dinosaur",
+    # Level 4
+    "watermelon", "smartphone", "spaceship", "xylophone", "microphone", "skyscraper", 
+    "helicopter", "lighthouse", "strawberry", "motorcycle", "earthquake", "environment"
+]
 
 class Player:
     websocket: WebSocket
@@ -62,12 +54,10 @@ class Room:
     current_word: str
     is_playing: bool
     history: List[dict]
-    difficulty: int
     guessed_correctly: Set[str]
 
-    def __init__(self, room_id: str, difficulty: int = 2):
+    def __init__(self, room_id: str):
         self.room_id = room_id
-        self.difficulty = difficulty
         self.players = []
         self.drawer_index = -1
         self.current_word = ""
@@ -101,18 +91,17 @@ class Room:
         self.start_turn()
 
     def start_turn(self):
-        word_list = WORDS_BY_DIFFICULTY.get(self.difficulty, WORDS_BY_DIFFICULTY[2])
-        self.current_word = random.choice(word_list)
+        self.current_word = random.choice(WORDS)
         self.history = []
         self.guessed_correctly = set()
 
 rooms: Dict[str, Room] = {}
 
 class ConnectionManager:
-    async def connect(self, websocket: WebSocket, room_id: str, username: str, difficulty: int = 2) -> Tuple[Room, Player]:
+    async def connect(self, websocket: WebSocket, room_id: str, username: str) -> Tuple[Room, Player]:
         await websocket.accept()
         if room_id not in rooms:
-            rooms[room_id] = Room(room_id, difficulty)
+            rooms[room_id] = Room(room_id)
         room = rooms[room_id]
         player = Player(websocket, username)
         room.add_player(player)
@@ -149,10 +138,9 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-@app.websocket("/ws/{room_id}/{username}/{difficulty}")
 @app.websocket("/ws/{room_id}/{username}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, difficulty: int = 2):
-    connection = await manager.connect(websocket, room_id, username, difficulty)
+async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
+    connection = await manager.connect(websocket, room_id, username)
     room: Room = connection[0]
     player: Player = connection[1]
     print(f"Connected: {username} to {room_id}")
@@ -199,7 +187,6 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, 
             
             if msg_type == 'start_game':
                 if not room.is_playing and len(room.players) >= 2:
-                    room.difficulty = data.get('difficulty', room.difficulty)
                     room.drawer_index = 0
                     if room.start_game():
                         drawer = room.players[room.drawer_index]
