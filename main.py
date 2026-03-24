@@ -2,6 +2,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import uvicorn
 import asyncio
 import json
 import random
@@ -278,5 +279,4 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
                 })
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+        uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
