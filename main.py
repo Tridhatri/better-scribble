@@ -197,6 +197,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, 
             
             if msg_type == 'start_game':
                 if not room.is_playing and len(room.players) >= 2:
+                    room.difficulty = data.get('difficulty', room.difficulty)
                     room.drawer_index = 0
                     if room.start_game():
                         drawer = room.players[room.drawer_index]

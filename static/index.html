@@ -19,16 +19,6 @@
                 <div class="input-group">
                     <input type="text" id="room-input" placeholder="Room Code" autocomplete="off" maxlength="10">
                 </div>
-                <div class="input-group">
-                    <label for="difficulty-select">Difficulty:</label>
-                    <select id="difficulty-select">
-                        <option value="1">Level 1 - Very Easy</option>
-                        <option value="2" selected>Level 2 - Easy</option>
-                        <option value="3">Level 3 - Medium</option>
-                        <option value="4">Level 4 - Hard</option>
-                        <option value="5">Level 5 - Very Hard</option>
-                    </select>
-                </div>
                 <button id="join-btn" class="primary-btn">Join / Create Room</button>
             </div>
         </div>
@@ -45,7 +35,19 @@
                     <h3>Players</h3>
                     <ul id="players-list">
                     </ul>
-                    <button id="start-btn" class="secondary-btn" style="display: none;">Start Game</button>
+                    <div id="host-controls" style="display: none; margin-top: auto;">
+                        <div class="input-group" style="margin-top: 1rem;">
+                            <label for="difficulty-select">Room Difficulty:</label>
+                            <select id="difficulty-select">
+                                <option value="1">Level 1 - Very Easy</option>
+                                <option value="2" selected>Level 2 - Easy</option>
+                                <option value="3">Level 3 - Medium</option>
+                                <option value="4">Level 4 - Hard</option>
+                                <option value="5">Level 5 - Very Hard</option>
+                            </select>
+                        </div>
+                        <button id="start-btn" class="secondary-btn">Start Game</button>
+                    </div>
                 </aside>
 
                 <div class="canvas-container glass-panel">

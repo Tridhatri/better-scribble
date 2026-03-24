@@ -2,8 +2,9 @@ const loginScreen = document.getElementById('login-screen');
 const gameScreen = document.getElementById('game-screen');
 const usernameInput = document.getElementById('username-input');
 const roomInput = document.getElementById('room-input');
-const difficultySelect = document.getElementById('difficulty-select');
 const joinBtn = document.getElementById('join-btn');
+const hostControls = document.getElementById('host-controls');
+const difficultySelect = document.getElementById('difficulty-select');
 
 const playersList = document.getElementById('players-list');
 const startBtn = document.getElementById('start-btn');
@@ -51,9 +52,8 @@ window.addEventListener('resize', resizeCanvas);
 joinBtn.addEventListener('click', () => {
     myUsername = usernameInput.value.trim();
     const room = roomInput.value.trim();
-    const difficulty = difficultySelect.value;
     if (myUsername && room) {
-        connectWebSocket(room, myUsername, difficulty);
+        connectWebSocket(room, myUsername, 2); // Default difficulty 2 in join URL
     } else {
         alert("Please enter both username and room code.");
     }
@@ -131,11 +131,11 @@ function updatePlayersList(players) {
     playersList.innerHTML = '';
     let host = players[0];
     
-    // Check if we are host and game haven't started (overlay block means game is NOT active yet)
+    // Host is the first player who joined
     if (host && host.username === myUsername && overlayMessage.style.display !== 'none') {
-        startBtn.style.display = 'block';
+        hostControls.style.display = 'block';
     } else {
-        startBtn.style.display = 'none';
+        hostControls.style.display = 'none';
     }
     
     players.forEach(p => {
@@ -154,7 +154,8 @@ function addChatMessage(text, type) {
 }
 
 startBtn.addEventListener('click', () => {
-    ws.send(JSON.stringify({ type: 'start_game' }));
+    const difficulty = parseInt(difficultySelect.value);
+    ws.send(JSON.stringify({ type: 'start_game', difficulty: difficulty }));
 });
 
 chatForm.addEventListener('submit', (e) => {
