@@ -60,7 +60,7 @@ class Room:
         return None
 
     def start_game(self):
-        if len(self.players) >= 2:
+        if len(self.players) >= 1:
             self.is_playing = True
             self.drawer_index = 0
             self.start_turn()

@@ -58,7 +58,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
                 continue
             
             if msg_type == 'start_game':
-                if not room.is_playing and len(room.players) >= 2:
+                if not room.is_playing and len(room.players) >= 1:
                     room.drawer_index = 0
                     if room.start_game():
                         drawer = room.players[room.drawer_index]
@@ -78,7 +78,11 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
                         })
             
             elif msg_type == 'draw':
-                if room.is_playing and len(room.players) > 0:
+                solo_mode = not room.is_playing and len(room.players) == 1
+                if solo_mode:
+                    room.history.append(data.get('data'))
+                    await manager.broadcast(room, {"type": "draw", "data": data.get('data')})
+                elif room.is_playing and len(room.players) > 0:
                     drawer = room.players[room.drawer_index]
                     if drawer.websocket == websocket:
                         room.history.append(data.get('data'))
@@ -86,12 +90,17 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str):
                             "type": "draw",
                             "data": data.get('data')
                         })
-            
+
             elif msg_type == 'clear':
-                drawer = room.players[room.drawer_index]
-                if room.is_playing and drawer.websocket == websocket:
+                solo_mode = not room.is_playing and len(room.players) == 1
+                if solo_mode:
                     room.history = []
                     await manager.broadcast(room, {"type": "clear"})
+                elif room.is_playing:
+                    drawer = room.players[room.drawer_index]
+                    if drawer.websocket == websocket:
+                        room.history = []
+                        await manager.broadcast(room, {"type": "clear"})
             
             elif msg_type == 'chat':
                 msg = data.get('message', '').strip()
