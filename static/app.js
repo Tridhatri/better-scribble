@@ -119,6 +119,7 @@ function handleMessage(msg) {
             resizeCanvas();
             break;
         case 'draw':
+            console.log("Drawing received:", msg.data);
             drawLineServer(msg.data);
             break;
         case 'clear':
@@ -213,6 +214,7 @@ function draw(e) {
     };
     
     drawLineLocal(payload);
+    console.log("Sending drawing:", payload);
     ws.send(JSON.stringify({ type: 'draw', data: payload }));
     
     lastPos = pos;

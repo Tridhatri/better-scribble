@@ -175,7 +175,7 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, 
             "drawer": drawer.id,
             "word_length": len(room.current_word)
         }, websocket)
-        if drawer == player:
+        if drawer.websocket == websocket:
             await manager.send_personal_message({
                 "type": "word_assignment",
                 "word": room.current_word
@@ -219,17 +219,24 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, 
                         })
             
             elif msg_type == 'draw':
-                if room.is_playing and len(room.players) > 0 and room.players[room.drawer_index] == player:
-                    room.history.append(data.get('data'))
-                    await manager.broadcast(room, {
-                        "type": "draw",
-                        "data": data.get('data')
-                    })
+                if room.is_playing and len(room.players) > 0:
+                    drawer = room.players[room.drawer_index]
+                    if drawer.websocket == websocket:
+                        print(f"[DRAW] Broadcasting point from {player.username}")
+                        room.history.append(data.get('data'))
+                        await manager.broadcast(room, {
+                            "type": "draw",
+                            "data": data.get('data')
+                        })
+                    else:
+                        # This happens if it's NOT your turn to draw
+                        print(f"[DRAW] REJECTED: sender={player.username}, active_drawer={drawer.username}")
                 # else:
-                #     print(f"Draw rejected: drawer={room.players[room.drawer_index].username}, sender={player.username}")
+                #     print(f"DEBUG: Draw attempt by {player.username} rejected. Drawer is {drawer.username}")
             
             elif msg_type == 'clear':
-                if room.is_playing and len(room.players) > 0 and room.players[room.drawer_index] == player:
+                drawer = room.players[room.drawer_index]
+                if room.is_playing and drawer.websocket == websocket:
                     room.history = []
                     await manager.broadcast(room, {"type": "clear"})
             
