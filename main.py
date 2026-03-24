@@ -131,14 +131,15 @@ class ConnectionManager:
 
     async def broadcast(self, room: Room, message: dict):
         disconnected = []
+        data = json.dumps(message)
         for p in room.players:
             try:
-                await p.websocket.send_text(json.dumps(message))
+                await p.websocket.send_text(data)
             except:
                 disconnected.append(p)
         for p in disconnected:
-             if p in room.players:
-                 room.players.remove(p)
+            if p in room.players:
+                room.players.remove(p)
 
     async def send_personal_message(self, message: dict, websocket: WebSocket):
         try:
@@ -149,7 +150,8 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 @app.websocket("/ws/{room_id}/{username}/{difficulty}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, difficulty: int):
+@app.websocket("/ws/{room_id}/{username}")
+async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, difficulty: int = 2):
     connection = await manager.connect(websocket, room_id, username, difficulty)
     room: Room = connection[0]
     player: Player = connection[1]
@@ -223,6 +225,8 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, username: str, 
                         "type": "draw",
                         "data": data.get('data')
                     })
+                # else:
+                #     print(f"Draw rejected: drawer={room.players[room.drawer_index].username}, sender={player.username}")
             
             elif msg_type == 'clear':
                 if room.is_playing and len(room.players) > 0 and room.players[room.drawer_index] == player:
