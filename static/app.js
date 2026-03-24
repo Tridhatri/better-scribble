@@ -2,6 +2,7 @@ const loginScreen = document.getElementById('login-screen');
 const gameScreen = document.getElementById('game-screen');
 const usernameInput = document.getElementById('username-input');
 const roomInput = document.getElementById('room-input');
+const difficultySelect = document.getElementById('difficulty-select');
 const joinBtn = document.getElementById('join-btn');
 
 const playersList = document.getElementById('players-list');
@@ -50,16 +51,17 @@ window.addEventListener('resize', resizeCanvas);
 joinBtn.addEventListener('click', () => {
     myUsername = usernameInput.value.trim();
     const room = roomInput.value.trim();
+    const difficulty = difficultySelect.value;
     if (myUsername && room) {
-        connectWebSocket(room, myUsername);
+        connectWebSocket(room, myUsername, difficulty);
     } else {
         alert("Please enter both username and room code.");
     }
 });
 
-function connectWebSocket(room, username) {
+function connectWebSocket(room, username, difficulty) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    ws = new WebSocket(`${protocol}//${window.location.host}/ws/${room}/${username}`);
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws/${room}/${username}/${difficulty}`);
 
     ws.onopen = () => {
         loginScreen.classList.remove('active');

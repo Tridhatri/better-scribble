@@ -19,11 +19,9 @@ body {
     font-family: 'Outfit', sans-serif;
     background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
     color: var(--text-color);
-    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
     overflow: hidden;
     display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
 #app {
@@ -102,9 +100,31 @@ input {
     transition: all 0.3s;
 }
 
-input:focus {
+input:focus, select:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+select {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s;
+    appearance: none;
+}
+
+label {
+    display: block;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--accent);
 }
 
 button {
@@ -140,10 +160,11 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
+    padding: 0.8rem 1.5rem;
     background: var(--panel-bg);
     border: 1px solid var(--border-color);
     border-radius: 12px;
+    z-index: 100;
 }
 
 .logo-small {
@@ -293,10 +314,21 @@ canvas {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .game-main { flex-direction: column; }
-    .players-sidebar { display: none; } /* Hide players list on small screens to prioritize drawing and chat */
-    .game-header { padding: 0.5rem; flex-wrap: wrap; justify-content: center; gap: 1rem; }
-    .chat-sidebar { width: 100%; height: 200px; flex: none; }
-    .canvas-container { flex: 1; min-height: 50vh; }
-    #game-screen { padding: 0.5rem; }
+    .game-main { 
+        flex-direction: column; 
+        overflow-y: auto; /* Allow scrolling content BUT header is outside */
+        height: calc(100% - 70px); 
+    }
+    .players-sidebar { display: none; } 
+    .game-header { 
+        padding: 0.5rem; 
+        flex-wrap: nowrap; 
+        justify-content: space-between;
+        min-height: 60px;
+    }
+    .logo-small { display: none; } /* Save space */
+    .word-display { font-size: 1.2rem; letter-spacing: 2px; }
+    .chat-sidebar { width: 100%; height: 250px; flex: none; margin-top: auto; }
+    .canvas-container { flex: 1; min-height: 300px; }
+    #game-screen { padding: 0.5rem; gap: 0.5rem; }
 }
