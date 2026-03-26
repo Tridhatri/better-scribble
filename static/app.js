@@ -175,6 +175,7 @@ function updatePlayersList(players) {
         overlayMessage.style.display = 'flex';
         chatInput.disabled = false;
         chatInput.placeholder = 'Type your guess here...';
+        resizeCanvas();
     }
 
     players.forEach(p => {
